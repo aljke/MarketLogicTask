@@ -1,0 +1,38 @@
+﻿@model Test.ModelViews.UsersViewModel
+
+@using(Html.BeginForm("List", "User", FormMethod.Get))
+{
+    <label for="CitySelect">Фільтр по місту</label>
+    <select id="CitySelect" name="CityFilter">
+        <option></option>
+        @foreach (var city in Model.AllCities)
+        {
+            <option value="@city">@city</option>
+        }
+    </select>
+
+    <label for="AgeSelect">Сортування за віком</label>
+    @Html.EnumDropDownListFor(model => model.SortChoice, new { @class = "AgeSelect", name = "SortChoice" })
+
+    <table border="1" width="450" style="margin-top:20px;">
+        <thead>
+            <tr>
+                <td><strong>Iм'я</strong></td>
+                <td><strong>Місто</strong></td>
+                <td><strong>Вік</strong></td>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Users)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>@item.City</td>
+                    <td>@item.Age</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+<input type="submit" value="submit"/>
+
+}
