@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.Entity;
@@ -18,26 +19,44 @@ namespace Test.Controllers
 
         public ActionResult List()
         {
-            string cityFilter = Request.QueryString["CityFilter"] as string;
-            int sortChoice = 0;
-            if (Request.QueryString["sortChoice"] != null)
-                Int32.TryParse(Request.QueryString["sortChoice"], out sortChoice);
-
-            var users = GetSelectedUsers(cityFilter, sortChoice);
+            var users = GetSelectedUsers(); //in this case return's all users
 
             var userViewModel = new UsersViewModel
             {
                 Users = users.ToList(),
-                AllCities = _context.UserProfiles.Select(x => x.City).Distinct().ToList()
+                AllCities = _context.UserProfiles.Select(x => x.City).Distinct().ToList() //data for combobox of cities
             };
 
             return View(userViewModel);
         }
 
-        private IEnumerable<UserProfile> GetSelectedUsers(string cityFilter, int sortChoice = 0)
+        /// <summary>
+        /// Return filtered and ordered list in JSON
+        /// </summary>
+        /// <param name="cityFilter">City filter from client</param>
+        /// <param name="ageOrder">Order choice from client</param>
+        /// <returns>JSON of users</returns>
+        public ActionResult GetUsersJson(string cityFilter, string ageOrder)
         {
+            int order = 0;
+            Int32.TryParse(ageOrder, out order);
+            if (ageOrder == null)
+                ageOrder = "";
+            return Json(GetSelectedUsers(cityFilter, order).ToList());
+        }
+
+        /// <summary>
+        /// Return IEnumerable of users
+        /// </summary>
+        /// <param name="cityFilter">City filter</param>
+        /// <param name="sortChoice">Order choice</param>
+        /// <returns>IEnumerable of users</returns>
+        private IEnumerable<UserProfile> GetSelectedUsers(string cityFilter = "", int sortChoice = 0)
+        {
+            // get all users
             IEnumerable<UserProfile> selectedUsers = _context.UserProfiles;
 
+            //if table is empty
             if (!selectedUsers.Any())
             {
                 _context.UserProfiles.Add(new UserProfile { Name = "Саша", City = "Київ", Age = 18 });
@@ -49,9 +68,11 @@ namespace Test.Controllers
                 _context.SaveChanges();
             }
 
-            if ((cityFilter != null) && (cityFilter.Trim() != ""))
+            //do filtering
+            if (cityFilter.Trim() != "")
                 selectedUsers = selectedUsers.Where(x => x.City == cityFilter);
 
+            //do ordering
             switch (sortChoice)
             {
                 case (int)SortChoice.YoungerFirst:

@@ -1,38 +1,67 @@
 ﻿@model Test.ModelViews.UsersViewModel
 
-@using(Html.BeginForm("List", "User", FormMethod.Get))
-{
-    <label for="CitySelect">Фільтр по місту</label>
-    <select id="CitySelect" name="CityFilter">
-        <option></option>
-        @foreach (var city in Model.AllCities)
+
+<label for="CitySelect">Фільтр по місту</label>
+<select id="city-select" onchange="getSelectedList()">
+    <option></option>
+    @foreach (var city in Model.AllCities)
+    {
+        <option value="@city">@city</option>
+    }
+</select>
+
+<label for="AgeSelect">Сортування за віком</label>
+@Html.EnumDropDownListFor(model => model.SortChoice, new { id = "age-select", onchange = "getSelectedList()" })
+
+<table id="list" border="1" width="450" style="margin-top:20px;">
+    <thead>
+        <tr>
+            <td><strong>Iм'я</strong></td>
+            <td><strong>Місто</strong></td>
+            <td><strong>Вік</strong></td>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model.Users)
         {
-            <option value="@city">@city</option>
-        }
-    </select>
-
-    <label for="AgeSelect">Сортування за віком</label>
-    @Html.EnumDropDownListFor(model => model.SortChoice, new { @class = "AgeSelect", name = "SortChoice" })
-
-    <table border="1" width="450" style="margin-top:20px;">
-        <thead>
             <tr>
-                <td><strong>Iм'я</strong></td>
-                <td><strong>Місто</strong></td>
-                <td><strong>Вік</strong></td>
+                <td>@item.Name</td>
+                <td>@item.City</td>
+                <td>@item.Age</td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Users)
-            {
-                <tr>
-                    <td>@item.Name</td>
-                    <td>@item.City</td>
-                    <td>@item.Age</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-<input type="submit" value="submit"/>
+        }
+    </tbody>
+</table>
 
-}
+<script src="https://ajax.aspnetcdn.com/ajax/jquery/jquery-2.2.0.min.js"></script>
+<script type="text/javascript">
+
+    //ajax query gor getting new list with filters and order
+     function getSelectedList() {
+        var filter = $("#city-select option:selected").text();
+        var order = $("#age-select option:selected").val();
+
+        $.ajax({
+            url: '@Url.Action("GetUsersJson", "User")',
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify({ cityFilter: filter, ageOrder: order }),
+            contentType: 'application/json; charset=utf-8',
+            success: function (data) {
+                refreshTable(data);
+            },
+            error: function (x, e) {
+            }
+        });
+    }
+
+    //insert new filtered and ordering rows into the table
+     function refreshTable(data) {
+         $("#list  tbody").html("");
+         for (var i in data) {
+             newTableRow = '<tr><td>' + data[i].Name + '</td>' + '<td>' + data[i].City + '</td>'
+                 + '<td>' + data[i].Age + '</td></tr>';
+             $("#list tbody").append(newTableRow);
+         }
+     }
+</script>
